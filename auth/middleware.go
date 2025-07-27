@@ -11,9 +11,9 @@ type contextKey string
 const (
 	UserIDKey contextKey = "user_id"
 	RoleKey   contextKey = "role"
+	RawJWTKey contextKey = "raw_jwt"
 )
 
-// Middleware для защиты маршрутов
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -37,21 +37,34 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
 		ctx = context.WithValue(ctx, RoleKey, claims.Role)
+		ctx = context.WithValue(ctx, RawJWTKey, tokenStr)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// Получение user_id и роли из контекста
 func GetUserID(r *http.Request) string {
 	if val := r.Context().Value(UserIDKey); val != nil {
-		return val.(string)
+		if id, ok := val.(string); ok {
+			return id
+		}
 	}
 	return ""
 }
 
 func GetUserRole(r *http.Request) string {
 	if val := r.Context().Value(RoleKey); val != nil {
-		return val.(string)
+		if role, ok := val.(string); ok {
+			return role
+		}
+	}
+	return ""
+}
+
+func GetRawJWT(r *http.Request) string {
+	if val := r.Context().Value(RawJWTKey); val != nil {
+		if jwt, ok := val.(string); ok {
+			return jwt
+		}
 	}
 	return ""
 }
